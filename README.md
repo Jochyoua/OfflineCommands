@@ -1,2 +1,2 @@
 # OfflineCommands
-A spigot plugin that executes a player when they join the server
+A spigot plugin that executes commands for specific players when they join the server
