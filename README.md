@@ -2,8 +2,8 @@
 
 OfflineCommands is a plugin built to run commands for specific players when they connect.\
 This plugin can also run the command if they're online as well.\
-All contributions are very much appreciated!
-
+All contributions are very much appreciated! \
+[SpigotMC Resource](https://www.spigotmc.org/resources/offlinecommands.93671/ "SpigotMC Resource")
 ## Commands
 
 OfflineCommands has basic commands for you to use.\
