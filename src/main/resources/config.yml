@@ -1,0 +1,6 @@
+# OfflineCommands by Jochyoua
+# Github: https://github.com/Jochyoua/OfflineCommands
+
+settings:
+  execute-if-online: true
+  use-offline-player-fallback: true
