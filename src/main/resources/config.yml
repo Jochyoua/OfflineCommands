@@ -4,8 +4,10 @@
 settings:
   execute-if-online: true
   use-offline-player-fallback: true
+  only-allow-console-to-add-commands: true
 
 variables:
+  only-console: "&cSorry, only console may execute this command."
   currently-online: "&7That user is currently online, executing now."
   incorrect-syntax: |-
     &cYou have provided incorrect syntax.

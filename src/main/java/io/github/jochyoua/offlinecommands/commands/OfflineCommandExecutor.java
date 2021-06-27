@@ -6,6 +6,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
@@ -66,6 +67,10 @@ public class OfflineCommandExecutor implements CommandExecutor {
      * @return if the command has failed
      */
     private boolean addCommand(CommandSender sender, String... args) {
+        if (!(sender instanceof ConsoleCommandSender) && plugin.getConfig().getBoolean("settings.only-allow-console-to-add-commands")) {
+            sender.sendMessage(color(plugin.getConfig().getString("variables.only-console")));
+            return true;
+        }
         StringBuilder commandStringBuilder = new StringBuilder();
         for (int i = 1; i < args.length; i++) {
             commandStringBuilder.append(" ").append(args[i]);
