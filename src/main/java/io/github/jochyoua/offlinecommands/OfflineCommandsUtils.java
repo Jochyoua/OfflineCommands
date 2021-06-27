@@ -78,7 +78,7 @@ public class OfflineCommandsUtils {
         return ChatColor.translateAlternateColorCodes('&', string);
     }
 
-    public static String prepareCommand(String command, Player player){
+    public static String prepareCommand(String command, Player player) {
         command = command.startsWith("/") ? command.substring(1) : command;
         command = preparePlaceholders(command, player);
         return command;

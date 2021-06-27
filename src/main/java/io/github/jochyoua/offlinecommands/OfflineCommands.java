@@ -11,6 +11,7 @@ public final class OfflineCommands extends JavaPlugin {
     @Override
     public void onEnable() {
         getConfig().options().copyDefaults(true);
+        getConfig().options().header("OfflineCommands by Jochyoua \n Github: https://github.com/Jochyoua/OfflineCommands");
         saveDefaultConfig();
 
         getServer().getPluginManager().registerEvents(new PlayerConnectionListener(this), this);

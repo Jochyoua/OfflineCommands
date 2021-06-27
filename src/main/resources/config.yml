@@ -4,3 +4,46 @@
 settings:
   execute-if-online: true
   use-offline-player-fallback: true
+
+variables:
+  currently-online: "&7That user is currently online, executing now."
+  incorrect-syntax: |-
+    &cYou have provided incorrect syntax.
+    &7/offlinecommands help
+  player-does-not-exist: |-
+    &cThe player you provided does not exist.
+    &cPlease make sure to provide a valid user.
+    &cAttempt to use UUID if possible.
+  new-command-added: |-
+    &7New command has successfully been added.
+    &7  ├─ &8[&e{uuid}&8]
+    &7  │  &8[Executor&8]&7: {executor}
+    &7  │  &3&o{identifier} &r&f{command}
+  identifier-search: "&7Removing identifier &3{identifier}&7 for uuid &e{uuid}"
+  identifier-not-found: "&cIdentifier does not exist."
+  identifier-found: "&3Identifier has been removed."
+  no-users-found: |-
+    &cThere are no existing users under these search parameters.
+  list-command-header: "&7OfflineCommands's List Page&7:"
+  list-user-uuid: "&7  ├─ &8[&e{uuid}&8]"
+  list-no-commands-found: |-
+    &cThis user has no commands to execute.
+    &cPlease ensure sure your config is set-up correctly.
+  list-command-format: |-
+    &7  │  &8[Executor&8]&7: {executor}
+    &7  │  &3&o{identifier} &r&f{command}
+    &7  │
+  help-command-format: |-
+    &7OfflineCommands's Help Page&7:
+    &7CHEATSHEET:
+     - &7<&6arg&7> &f= &7required arg
+     - &7(&6arg&7) &f= &7optional arg
+    &7  │
+    &7  ├─ &8[&eofflinecommands list&8]
+    &7  │  &fUsed to list all current users and their commands
+    &7  │
+    &7  ├─ &8[&eofflinecommands add &8<&6user="username/UUID"&8> &8<&6command="command"&8> &8(&6executor="CONSOLE/PLAYER"&8)]
+    &7  │  &fUsed add a command for a user.
+    &7  │
+    &7  ├─ &8[&eofflinecommands remove &8<&6UUID&8> &8<&6identifier&8>]
+    &7  │  &fUsed to remove a command from the config.

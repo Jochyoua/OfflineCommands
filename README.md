@@ -19,13 +19,12 @@ All commands below require the permission `offlinecommands.use`
 ### Command examples
 
 * Adding
-  * `offlinecommands add user="USERNAME/UUID" command="COMMAND"`
-  * `offlinecommands add user="USERNAME/UUID" command="COMMAND" executor="player" no-feedback`\
-  *no-feedback makes it so that the sender does not recieve any mesages*\
-  *executor="player" is optional and if it is anything other than CONSOLE it executes it as a player*
+    * `offlinecommands add user="USERNAME/UUID" command="COMMAND"`
+    * `offlinecommands add user="USERNAME/UUID" command="COMMAND" executor="player" no-feedback`\
+      *no-feedback makes it so that the sender does not recieve any mesages*\
+      *executor="player" is optional and if it is anything other than CONSOLE it executes it as a player*
 * Removing
-  * `offlinecommands remove 069a79f4-44e9-4726-a5be-fca90e38aaf5 73e389a5`
-
+    * `offlinecommands remove 069a79f4-44e9-4726-a5be-fca90e38aaf5 73e389a5`
 
 ***
 This guide finishes here, thank you for reading!

@@ -1,7 +1,6 @@
 package io.github.jochyoua.offlinecommands.commands;
 
 import io.github.jochyoua.offlinecommands.OfflineCommands;
-import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -11,6 +10,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,32 +55,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
      * @return returns the help command with color coding
      */
     private String helpCommand() {
-        String helpCommand = "&7OfflineCommands's Help Page&7:" +
-                "\n" +
-                "&7CHEATSHEET:" +
-                "\n" +
-                " - &7<&6arg&7> &f= &7required arg" +
-                "\n" +
-                " - &7(&6arg&7) &f= &7optional arg " +
-                "\n" +
-                "&7  │" +
-                "\n" +
-                "&7  ├─ &8[&eofflinecommands list&8]" +
-                "\n" +
-                "&7  │  &fUsed to list all current users and their commands" +
-                "\n" +
-                "&7  │" +
-                "\n" +
-                "&7  ├─ &8[&eofflinecommands add &8<&6user=\"username/UUID\"&8> &8<&6command=\"command\"&8> &8(&6executor=\"CONSOLE/PLAYER\"&8)]" +
-                "\n" +
-                "&7  │  &fUsed add a command for a user." +
-                "\n" +
-                "&7  │" +
-                "\n" +
-                "&7  ├─ &8[&eofflinecommands remove &8<&6UUID&8> &8<&6identifier&8>]" +
-                "\n" +
-                "&7  │  &fUsed to remove a command from the config.";
-        return color(helpCommand);
+        return color(plugin.getConfig().getString("variables.help-command-format"));
     }
 
     /**
@@ -122,9 +97,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
 
         if (commandToAdd == null || user == null) {
             if (!noFeedback) {
-                sender.sendMessage(ChatColor.RED + "You must follow the correct syntax.");
-                sender.sendMessage(ChatColor.RED + "Please make sure to provide a user and command.");
-                sender.sendMessage(ChatColor.GRAY + "/offlinecommands help");
+                sender.sendMessage(color(plugin.getConfig().getString("variables.incorrect-syntax")));
             }
             return true;
         }
@@ -136,9 +109,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
             if (player == null) {
                 if (!plugin.getConfig().getBoolean("settings.use-offline-player-fallback")) {
                     if (!noFeedback) {
-                        sender.sendMessage(ChatColor.RED + "The player you provided does not exist.");
-                        sender.sendMessage(ChatColor.RED + "Please make sure to provide a valid user.");
-                        sender.sendMessage(ChatColor.RED + "Attempt to use UUID if possible.");
+                        sender.sendMessage(color(plugin.getConfig().getString("variables.player-does-not-exist")));
                     }
                     return true;
                 }
@@ -153,7 +124,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
                 Bukkit.dispatchCommand(executor.equalsIgnoreCase("CONSOLE") ?
                         Bukkit.getConsoleSender() : player, prepareCommand(commandToAdd, player));
                 if (!noFeedback) {
-                    sender.sendMessage(color("&7That user is currently online, executing now."));
+                    sender.sendMessage(color(plugin.getConfig().getString("variables.currently-online")));
                 }
                 return true;
             }
@@ -167,11 +138,11 @@ public class OfflineCommandExecutor implements CommandExecutor {
         plugin.saveConfig();
 
         if (!noFeedback) {
-            sender.sendMessage(color("&7New command has successfully been added."));
-            sender.sendMessage(color("&7  ├─ &8[&e" + uuid + "&8]"));
-            sender.sendMessage(color("&7  │  &8[Executor&8]&7: " + executor));
-            sender.sendMessage(color("&7  │  &3&o" + commandIdentifier + " &r&f" + commandToAdd));
-            sender.sendMessage(color("&7  │"));
+            sender.sendMessage(color(plugin.getConfig().getString("variables.new-command-added")
+                    .replaceAll("(?i)\\{uuid}", uuid.toString())
+                    .replaceAll("(?i)\\{executor}", executor)
+                    .replaceAll("(?i)\\{command}", commandToAdd)
+                    .replaceAll("(?i)\\{identifier}", commandIdentifier)));
         }
         return true;
     }
@@ -185,20 +156,22 @@ public class OfflineCommandExecutor implements CommandExecutor {
      */
     private boolean removeCommand(CommandSender sender, String... args) {
         if (args.length != 3) {
-            sender.sendMessage(ChatColor.RED + "You have provided incorrect syntax.");
-            sender.sendMessage(ChatColor.GRAY + "/offlinecommands help");
+            sender.sendMessage(color(plugin.getConfig().getString("variables.incorrect-syntax")));
             return true;
         }
 
-        sender.sendMessage(color("&7Identifier &3" + args[2] + "&7 for uuid &e" + args[1]));
+        sender.sendMessage(color(plugin.getConfig().getString("variables.identifier-search")
+                .replaceAll("(?i)\\{uuid}", args[1])
+                .replaceAll("(?i)\\{identifier}", args[1])));
 
         if (!plugin.getConfig().isSet("users." + args[1] + ".commands-to-execute." + args[2])) {
-            sender.sendMessage(color("&cIdentifier does not exist."));
+            sender.sendMessage(color(plugin.getConfig().getString("variables.identifier-not-found")));
             return true;
         }
 
         plugin.getConfig().set("users." + args[1] + ".commands-to-execute." + args[2], null);
-        sender.sendMessage(color("&3Identifier has been removed."));
+        plugin.saveConfig();
+        sender.sendMessage(color(plugin.getConfig().getString("variables.identifier-found")));
         return true;
     }
 
@@ -211,33 +184,34 @@ public class OfflineCommandExecutor implements CommandExecutor {
     private boolean listCommand(CommandSender sender) {
         ConfigurationSection userConfigurationSection = plugin.getConfig().getConfigurationSection("users");
         if (userConfigurationSection == null) {
-            sender.sendMessage(ChatColor.RED + "There are no users in the configuration to list. ");
-            sender.sendMessage(ChatColor.RED + "Please ensure sure your config is set-up correctly.");
+            sender.sendMessage(color(plugin.getConfig().getString("variables.no-users-found")));
             return true;
         }
-        sender.sendMessage(color("&7OfflineCommands's List Page&7:"));
+        sender.sendMessage(color(plugin.getConfig().getString("variables.list-command-header")));
+        Set<String> matchedUsers = userConfigurationSection.getKeys(false);
+        if (matchedUsers.isEmpty()) {
+            sender.sendMessage(color(plugin.getConfig().getString("variables.no-users-found")));
+            return true;
+        }
         for (String uuid :
-                userConfigurationSection.getKeys(false)) {
-            sender.sendMessage(color("&7  ├─ &8[&e" + uuid + "&8]"));
+                matchedUsers) {
+            sender.sendMessage(color(plugin.getConfig().getString("variables.list-user-uuid").
+                    replaceAll("(?i)\\{uuid}", uuid)));
 
             ConfigurationSection commandConfigurationSection = plugin.getConfig().getConfigurationSection("users." + uuid + ".commands-to-execute");
 
             if (commandConfigurationSection == null) {
-                sender.sendMessage(ChatColor.RED + "This user has no commands to execute.");
-                sender.sendMessage(ChatColor.RED + "Please ensure sure your config is set-up correctly.");
+                sender.sendMessage(color(plugin.getConfig().getString("variables.list-no-commands-found")));
                 return true;
             }
 
-            int iterated = 1;
             for (String commandToExecute :
                     commandConfigurationSection.getKeys(false)) {
                 String path = "users." + uuid + ".commands-to-execute." + commandToExecute;
-                sender.sendMessage(color("&7  │  &8[Executor&8]&7: " + plugin.getConfig().getString(path + ".execute_as")));
-                sender.sendMessage(color("&7  │  &3&o" + commandToExecute + " &r&f" + plugin.getConfig().getString(path + ".command")));
-                if (iterated != commandConfigurationSection.getKeys(false).size()) {
-                    sender.sendMessage(color("&7  │"));
-                }
-                iterated++;
+                sender.sendMessage(color(plugin.getConfig().getString("variables.list-command-format")
+                        .replaceAll("(?i)\\{executor}", plugin.getConfig().getString(path + ".execute_as"))
+                        .replaceAll("(?i)\\{identifier}", commandToExecute)
+                        .replaceAll("(?i)\\{command}", plugin.getConfig().getString(path + ".command"))));
             }
         }
         return true;
