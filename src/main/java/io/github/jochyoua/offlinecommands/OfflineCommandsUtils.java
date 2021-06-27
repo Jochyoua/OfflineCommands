@@ -3,6 +3,7 @@ package io.github.jochyoua.offlinecommands;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -31,6 +32,17 @@ public class OfflineCommandsUtils {
             return string;
         }
         return PlaceholderAPI.setPlaceholders(player, string);
+    }
+
+    public static void sendMessage(CommandSender sender, String message, boolean feedback) {
+        if (!feedback) {
+            return;
+        }
+        if (sender instanceof Player) {
+            message = preparePlaceholders(message, (Player) sender);
+        }
+
+        sender.sendMessage(message);
     }
 
     public static void logMessage(String message) {

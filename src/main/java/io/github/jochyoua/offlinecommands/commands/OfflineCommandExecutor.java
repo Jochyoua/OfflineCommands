@@ -1,6 +1,7 @@
 package io.github.jochyoua.offlinecommands.commands;
 
 import io.github.jochyoua.offlinecommands.OfflineCommands;
+import io.github.jochyoua.offlinecommands.OfflineCommandsUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -33,19 +34,21 @@ public class OfflineCommandExecutor implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(helpCommand());
+            OfflineCommandsUtils.sendMessage(sender, helpCommand(), true);
             return true;
         }
+
+        boolean feedback = !(String.join(" ", args).contains("no-feedback"));
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "list":
-                return listCommand(sender);
+                return listCommand(sender, feedback);
             case "add":
-                return addCommand(sender, args);
+                return addCommand(sender, feedback, args);
             case "remove":
-                return removeCommand(sender, args);
+                return removeCommand(sender, feedback, args);
             default:
             case "help":
-                sender.sendMessage(helpCommand());
+                OfflineCommandsUtils.sendMessage(sender, helpCommand(), feedback);
                 return true;
         }
     }
@@ -66,16 +69,15 @@ public class OfflineCommandExecutor implements CommandExecutor {
      * @param args   the arguments from the command
      * @return if the command has failed
      */
-    private boolean addCommand(CommandSender sender, String... args) {
+    private boolean addCommand(CommandSender sender, boolean feedback, String... args) {
         if (!(sender instanceof ConsoleCommandSender) && plugin.getConfig().getBoolean("settings.only-allow-console-to-add-commands")) {
-            sender.sendMessage(color(plugin.getConfig().getString("variables.only-console")));
+            OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.only-console"))), feedback);
             return true;
         }
         StringBuilder commandStringBuilder = new StringBuilder();
         for (int i = 1; i < args.length; i++) {
             commandStringBuilder.append(" ").append(args[i]);
         }
-        boolean noFeedback = commandStringBuilder.toString().contains("no-feedback");
 
         String user = null;
         String executor = null;
@@ -101,9 +103,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
         }
 
         if (commandToAdd == null || user == null) {
-            if (!noFeedback) {
-                sender.sendMessage(color(plugin.getConfig().getString("variables.incorrect-syntax")));
-            }
+            OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.incorrect-syntax"))), feedback);
             return true;
         }
         UUID uuid;
@@ -113,9 +113,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
             Player player = Bukkit.getPlayer(user);
             if (player == null) {
                 if (!plugin.getConfig().getBoolean("settings.use-offline-player-fallback")) {
-                    if (!noFeedback) {
-                        sender.sendMessage(color(plugin.getConfig().getString("variables.player-does-not-exist")));
-                    }
+                    OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.player-does-not-exist"))), feedback);
                     return true;
                 }
                 @SuppressWarnings("deprecation") OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(user);
@@ -128,9 +126,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
                     && plugin.getConfig().getBoolean("settings.execute-if-online")) {
                 Bukkit.dispatchCommand(executor.equalsIgnoreCase("CONSOLE") ?
                         Bukkit.getConsoleSender() : player, prepareCommand(commandToAdd, player));
-                if (!noFeedback) {
-                    sender.sendMessage(color(plugin.getConfig().getString("variables.currently-online")));
-                }
+                OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.currently-online"))), feedback);
                 return true;
             }
         }
@@ -142,13 +138,11 @@ public class OfflineCommandExecutor implements CommandExecutor {
         plugin.getConfig().set(path + ".command", commandToAdd);
         plugin.saveConfig();
 
-        if (!noFeedback) {
-            sender.sendMessage(color(plugin.getConfig().getString("variables.new-command-added")
-                    .replaceAll("(?i)\\{uuid}", uuid.toString())
-                    .replaceAll("(?i)\\{executor}", executor)
-                    .replaceAll("(?i)\\{command}", commandToAdd)
-                    .replaceAll("(?i)\\{identifier}", commandIdentifier)));
-        }
+        OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.new-command-added")
+                .replaceAll("(?i)\\{uuid}", uuid.toString())
+                .replaceAll("(?i)\\{executor}", executor)
+                .replaceAll("(?i)\\{command}", commandToAdd)
+                .replaceAll("(?i)\\{identifier}", commandIdentifier))), feedback);
         return true;
     }
 
@@ -159,64 +153,65 @@ public class OfflineCommandExecutor implements CommandExecutor {
      * @param args   the arguments from the command
      * @return if the command has failed
      */
-    private boolean removeCommand(CommandSender sender, String... args) {
+    private boolean removeCommand(CommandSender sender, boolean feedback, String... args) {
         if (args.length != 3) {
-            sender.sendMessage(color(plugin.getConfig().getString("variables.incorrect-syntax")));
+            OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.incorrect-syntax"))), feedback);
             return true;
         }
 
-        sender.sendMessage(color(plugin.getConfig().getString("variables.identifier-search")
+        OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.identifier-search")
                 .replaceAll("(?i)\\{uuid}", args[1])
-                .replaceAll("(?i)\\{identifier}", args[1])));
+                .replaceAll("(?i)\\{identifier}", args[1]))), feedback);
 
         if (!plugin.getConfig().isSet("users." + args[1] + ".commands-to-execute." + args[2])) {
-            sender.sendMessage(color(plugin.getConfig().getString("variables.identifier-not-found")));
+            OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.identifier-not-found"))), feedback);
             return true;
         }
 
         plugin.getConfig().set("users." + args[1] + ".commands-to-execute." + args[2], null);
         plugin.saveConfig();
-        sender.sendMessage(color(plugin.getConfig().getString("variables.identifier-found")));
+        OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.identifier-found"))), feedback);
         return true;
     }
 
     /**
      * Shows a list of users who have commands saved to their UUID
      *
-     * @param sender the user executing the command
+     * @param sender   the user executing the command
+     * @param feedback
      * @return if the command has failed
      */
-    private boolean listCommand(CommandSender sender) {
+    private boolean listCommand(CommandSender sender, boolean feedback) {
         ConfigurationSection userConfigurationSection = plugin.getConfig().getConfigurationSection("users");
         if (userConfigurationSection == null) {
-            sender.sendMessage(color(plugin.getConfig().getString("variables.no-users-found")));
+            OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.no-users-found"))), feedback);
             return true;
         }
-        sender.sendMessage(color(plugin.getConfig().getString("variables.list-command-header")));
+        OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.list-command-header"))), feedback);
         Set<String> matchedUsers = userConfigurationSection.getKeys(false);
         if (matchedUsers.isEmpty()) {
-            sender.sendMessage(color(plugin.getConfig().getString("variables.no-users-found")));
+            OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.no-users-found"))), feedback);
             return true;
         }
         for (String uuid :
                 matchedUsers) {
-            sender.sendMessage(color(plugin.getConfig().getString("variables.list-user-uuid").
-                    replaceAll("(?i)\\{uuid}", uuid)));
+            OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.list-user-uuid").
+                    replaceAll("(?i)\\{uuid}", uuid))), feedback);
 
             ConfigurationSection commandConfigurationSection = plugin.getConfig().getConfigurationSection("users." + uuid + ".commands-to-execute");
 
             if (commandConfigurationSection == null) {
-                sender.sendMessage(color(plugin.getConfig().getString("variables.list-no-commands-found")));
+                OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.list-no-commands-found"))), feedback);
                 return true;
             }
 
             for (String commandToExecute :
                     commandConfigurationSection.getKeys(false)) {
                 String path = "users." + uuid + ".commands-to-execute." + commandToExecute;
-                sender.sendMessage(color(plugin.getConfig().getString("variables.list-command-format")
+                OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.list-command-format")
                         .replaceAll("(?i)\\{executor}", plugin.getConfig().getString(path + ".execute_as"))
                         .replaceAll("(?i)\\{identifier}", commandToExecute)
-                        .replaceAll("(?i)\\{command}", plugin.getConfig().getString(path + ".command"))));
+                        .replaceAll("(?i)\\{command}", plugin.getConfig().getString(path + ".command")))), feedback);
             }
         }
         return true;
