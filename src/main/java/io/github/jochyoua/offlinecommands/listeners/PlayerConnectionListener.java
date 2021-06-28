@@ -32,7 +32,7 @@ public class PlayerConnectionListener implements Listener {
             debugStringBuilder.append(entrySet.getKey()).append(":").append(" ").append(entrySet.getValue());
         }
 
-        if (!debugStringBuilder.isEmpty()) {
+        if (debugStringBuilder.length() != 0) {
             debugStringBuilder.append("\n");
             OfflineCommandsUtils.logMessage("Executing commands for " + player.getName() + "\n" + debugStringBuilder.toString());
         }
