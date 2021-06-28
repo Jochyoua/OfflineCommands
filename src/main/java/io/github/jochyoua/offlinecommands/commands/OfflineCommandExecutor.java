@@ -8,9 +8,14 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.util.StringUtil;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -20,10 +25,12 @@ import java.util.regex.Pattern;
 import static io.github.jochyoua.offlinecommands.OfflineCommandsUtils.color;
 import static io.github.jochyoua.offlinecommands.OfflineCommandsUtils.prepareCommand;
 
-public class OfflineCommandExecutor implements CommandExecutor {
+public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
     private static final Pattern COMMAND_PATTERN = Pattern.compile("command=\"([^\"]*)\"");
     private static final Pattern EXECUTOR_PATTERN = Pattern.compile("executor=\"([^\"]*)\"");
     private static final Pattern USER_PATTERN = Pattern.compile("user=\"([^\"]*)\"");
+
+    private final static List<String> BASE_ARGS = Arrays.asList("help", "list", "add", "remove");
 
     private final OfflineCommands plugin;
 
@@ -161,7 +168,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
 
         OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.identifier-search")
                 .replaceAll("(?i)\\{uuid}", args[1])
-                .replaceAll("(?i)\\{identifier}", args[1]))), feedback);
+                .replaceAll("(?i)\\{identifier}", args[2]))), feedback);
 
         if (!plugin.getConfig().isSet("users." + args[1] + ".commands-to-execute." + args[2])) {
             OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.identifier-not-found"))), feedback);
@@ -169,6 +176,11 @@ public class OfflineCommandExecutor implements CommandExecutor {
         }
 
         plugin.getConfig().set("users." + args[1] + ".commands-to-execute." + args[2], null);
+        ConfigurationSection configurationSection = plugin.getConfig().getConfigurationSection("users." + args[1] + ".commands-to-execute");
+
+        if (configurationSection == null || configurationSection.getKeys(false).isEmpty()) {
+            plugin.getConfig().set("users." + args[1], null);
+        }
         plugin.saveConfig();
         OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.identifier-found"))), feedback);
         return true;
@@ -178,7 +190,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
      * Shows a list of users who have commands saved to their UUID
      *
      * @param sender   the user executing the command
-     * @param feedback
+     * @param feedback if false, sender will not receive mesages
      * @return if the command has failed
      */
     private boolean listCommand(CommandSender sender, boolean feedback) {
@@ -200,7 +212,7 @@ public class OfflineCommandExecutor implements CommandExecutor {
 
             ConfigurationSection commandConfigurationSection = plugin.getConfig().getConfigurationSection("users." + uuid + ".commands-to-execute");
 
-            if (commandConfigurationSection == null) {
+            if (commandConfigurationSection == null || commandConfigurationSection.getKeys(false).isEmpty()) {
                 OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.list-no-commands-found"))), feedback);
                 return true;
             }
@@ -215,5 +227,37 @@ public class OfflineCommandExecutor implements CommandExecutor {
             }
         }
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        final List<String> completions = new ArrayList<>();
+        final int length = args.length;
+        switch (length) {
+            case 1:
+                StringUtil.copyPartialMatches(args[0], BASE_ARGS, completions);
+                break;
+            case 2:
+                if (args[0].equalsIgnoreCase("add")) {
+                    StringUtil.copyPartialMatches(args[1], Arrays.asList("user=\"\"", "command=\"\"", "executor=\"\"", "no-feedback"), completions);
+                } else if (args[0].equalsIgnoreCase("remove")) {
+                    ConfigurationSection allUserMatch = plugin.getConfig().getConfigurationSection("users");
+                    if (allUserMatch != null) {
+                        StringUtil.copyPartialMatches(args[1], allUserMatch.getKeys(false), completions);
+                    }
+                }
+                break;
+            case 3:
+                if (args[0].equalsIgnoreCase("add")) {
+                    StringUtil.copyPartialMatches(args[2], Arrays.asList("user=\"\"", "command=\"\"", "executor=\"\"", "no-feedback"), completions);
+                } else if (args[0].equalsIgnoreCase("remove")) {
+                    ConfigurationSection userMatch = plugin.getConfig().getConfigurationSection("users." + args[1] + ".commands-to-execute");
+                    if (userMatch != null) {
+                        StringUtil.copyPartialMatches(args[2], userMatch.getKeys(false), completions);
+                    }
+                }
+                break;
+        }
+        return completions;
     }
 }

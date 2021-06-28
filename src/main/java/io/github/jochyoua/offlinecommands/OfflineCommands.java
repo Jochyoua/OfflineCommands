@@ -16,9 +16,11 @@ public final class OfflineCommands extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new PlayerConnectionListener(this), this);
 
+        OfflineCommandExecutor offlineCommandExecutor = new OfflineCommandExecutor(this);
         PluginCommand offlineCommand = getCommand("offlinecommands");
         if (offlineCommand != null) {
-            offlineCommand.setExecutor(new OfflineCommandExecutor(this));
+            offlineCommand.setExecutor(offlineCommandExecutor);
+            offlineCommand.setTabCompleter(offlineCommandExecutor);
         }
     }
 }

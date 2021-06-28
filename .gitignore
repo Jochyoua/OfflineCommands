@@ -96,6 +96,7 @@ $RECYCLE.BIN/
 *.lnk
 
 target/
+server/
 
 pom.xml.tag
 pom.xml.releaseBackup
@@ -111,3 +112,4 @@ buildNumber.properties
 
 # Common working directory
 run/
+.run

@@ -6,7 +6,7 @@
 
     <groupId>io.github.jochyoua</groupId>
     <artifactId>OfflineCommands</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>OfflineCommands</name>
@@ -16,6 +16,7 @@
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
     <url>https://jochyoua.github.io</url>
 
     <build>
@@ -40,6 +41,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <outputFile>./server/plugins/${project.artifactId}.jar</outputFile>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
                     </execution>
