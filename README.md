@@ -1,4 +1,4 @@
-# OfflineCommands ![GitHub](https://img.shields.io/github/license/Jochyoua/OfflineCommands?style=plastic) ![GitHub last commit](https://img.shields.io/github/last-commit/Jochyoua/OfflineCommands?style=plastic) ![swag](https://img.shields.io/badge/swag-yes-red)
+# OfflineCommands ![GitHub](https://img.shields.io/github/license/Jochyoua/OfflineCommands?style=plastic) ![GitHub last commit](https://img.shields.io/github/last-commit/Jochyoua/OfflineCommands?style=plastic) ![Github Release](https://img.shields.io/github/v/release/Jochyoua/OfflineCommands?style=plastic)
 
 OfflineCommands is a plugin built to run commands for specific players when they connect.\
 This plugin can also run the command if they're online as well.\
