@@ -19,17 +19,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static io.github.jochyoua.offlinecommands.OfflineCommandsUtils.color;
 import static io.github.jochyoua.offlinecommands.OfflineCommandsUtils.prepareCommand;
 
 public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
-    private static final Pattern COMMAND_PATTERN = Pattern.compile("command=\"([^\"]*)\"");
-    private static final Pattern EXECUTOR_PATTERN = Pattern.compile("executor=\"([^\"]*)\"");
-    private static final Pattern USER_PATTERN = Pattern.compile("user=\"([^\"]*)\"");
-
     private final static List<String> BASE_ARGS = Arrays.asList("help", "list", "add", "remove");
 
     private final OfflineCommands plugin;
@@ -81,29 +75,14 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
             OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.only-console"))), feedback);
             return true;
         }
-        StringBuilder commandStringBuilder = new StringBuilder();
-        for (int i = 1; i < args.length; i++) {
-            commandStringBuilder.append(" ").append(args[i]);
+        if (args.length < 3) {
+            OfflineCommandsUtils.sendMessage(sender, (color(plugin.getConfig().getString("variables.incorrect-syntax"))), feedback);
+            return true;
         }
 
-        String user = null;
-        String executor = null;
-        String commandToAdd = null;
-
-        Matcher executorMatcher = EXECUTOR_PATTERN.matcher(commandStringBuilder);
-        while (executorMatcher.find()) {
-            executor = executorMatcher.group(1);
-        }
-
-        Matcher commandMatcher = COMMAND_PATTERN.matcher(commandStringBuilder);
-        while (commandMatcher.find()) {
-            commandToAdd = commandMatcher.group(1);
-        }
-
-        Matcher userMatcher = USER_PATTERN.matcher(commandStringBuilder);
-        while (userMatcher.find()) {
-            user = userMatcher.group(1);
-        }
+        String user = OfflineCommandsUtils.getValue("user", args);
+        String executor = OfflineCommandsUtils.getValue("executor", args);
+        String commandToAdd = OfflineCommandsUtils.getValue("command", args);
 
         if (executor == null) {
             executor = "CONSOLE";
