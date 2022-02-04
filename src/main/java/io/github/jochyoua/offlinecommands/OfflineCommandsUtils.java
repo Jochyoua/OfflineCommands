@@ -95,4 +95,32 @@ public class OfflineCommandsUtils {
         command = preparePlaceholders(command, player);
         return command;
     }
+
+    public static String getValue(String valueType, String[] args) {
+        StringBuilder value = new StringBuilder();
+
+        boolean foundType = false;
+        for (String arg : args) {
+            int start = 0;
+            if (!foundType) {
+                String typePrefix = valueType + "=\"";
+                if (arg.startsWith(typePrefix)) {
+                    foundType = true;
+                    start = typePrefix.length();
+                }
+            } else {
+                value.append(' ');
+            }
+            if (foundType) {
+                if (arg.endsWith("\"") && !arg.endsWith("\\\"")) {
+                    value.append(arg, start, arg.length() - 1);
+                    return value.toString().replace("\\\"", "\"");
+                } else {
+                    value.append(arg, start, arg.length());
+                }
+            }
+        }
+
+        return null;
+    }
 }
