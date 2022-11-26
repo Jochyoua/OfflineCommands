@@ -21,6 +21,8 @@ public final class OfflineCommands extends JavaPlugin {
         if (offlineCommand != null) {
             offlineCommand.setExecutor(offlineCommandExecutor);
             offlineCommand.setTabCompleter(offlineCommandExecutor);
+        } else {
+            OfflineCommandsUtils.logMessage("Command 'offlinecommands' was unsuccessfully registered/null, perhaps a corrupt plugin.yml?", "error");
         }
     }
 }
