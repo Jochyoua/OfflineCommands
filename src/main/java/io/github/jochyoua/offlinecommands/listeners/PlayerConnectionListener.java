@@ -34,7 +34,7 @@ public class PlayerConnectionListener implements Listener {
 
         if (debugStringBuilder.length() != 0) {
             debugStringBuilder.append("\n");
-            OfflineCommandsUtils.logMessage("Executing commands for " + player.getName() + "\n" + debugStringBuilder.toString());
+            OfflineCommandsUtils.logMessage("Executing commands for " + player.getName() + "\n" + debugStringBuilder, "debug");
         }
 
         plugin.getConfig().set("users." + player.getUniqueId(), null);
