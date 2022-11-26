@@ -5,6 +5,7 @@ settings:
   execute-if-online: true
   use-offline-player-fallback: true
   only-allow-console-to-add-commands: true
+  delay-execute-after-join-ticks: 20
 
 variables:
   only-console: "&cSorry, only console may execute this command."

@@ -23,22 +23,29 @@ public class PlayerConnectionListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent playerJoinEvent) {
-        Player player = playerJoinEvent.getPlayer();
-        StringBuilder debugStringBuilder = new StringBuilder();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            Player player = playerJoinEvent.getPlayer();
 
-        for (Map.Entry<String, Boolean> entrySet :
-                getCommands(player).entrySet()) {
-            debugStringBuilder.append("\n");
-            debugStringBuilder.append(entrySet.getKey()).append(":").append(" ").append(entrySet.getValue());
-        }
+            if(!player.isOnline()){
+                return;
+            }
 
-        if (debugStringBuilder.length() != 0) {
-            debugStringBuilder.append("\n");
-            OfflineCommandsUtils.logMessage("Executing commands for " + player.getName() + "\n" + debugStringBuilder, "debug");
-        }
+            StringBuilder debugStringBuilder = new StringBuilder();
 
-        plugin.getConfig().set("users." + player.getUniqueId(), null);
-        plugin.saveConfig();
+            for (Map.Entry<String, Boolean> entrySet :
+                    getCommands(player).entrySet()) {
+                debugStringBuilder.append("\n");
+                debugStringBuilder.append(entrySet.getKey()).append(":").append(" ").append(entrySet.getValue());
+            }
+
+            if (debugStringBuilder.length() != 0) {
+                debugStringBuilder.append("\n");
+                OfflineCommandsUtils.logMessage("Executing commands for " + player.getName() + "\n" + debugStringBuilder, "debug");
+            }
+
+            plugin.getConfig().set("users." + player.getUniqueId(), null);
+            plugin.saveConfig();
+        }, plugin.getConfig().getInt("settings.delay-execute-after-join-ticks", 20));
     }
 
 
