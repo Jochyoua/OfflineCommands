@@ -45,12 +45,16 @@ public class OfflineCommandsUtils {
         sender.sendMessage(message);
     }
 
-    public static void logMessage(String message) {
+    public static void logMessage(String message, String fileName) {
         StackTraceElement st = Thread.currentThread().getStackTrace()[2];
         Logger logger = Logger.getLogger(st.getClassName() + ":" + st.getLineNumber() + " " + Thread.currentThread().getStackTrace()[2].getMethodName());
         try {
-            File file = new File(OfflineCommands.getPlugin(OfflineCommands.class).getDataFolder(), "logs/commandLogs.log");
+            File file = new File(OfflineCommands.getPlugin(OfflineCommands.class).getDataFolder(), "logs/" + fileName + ".log");
+            File pluginDirectory = OfflineCommands.getPlugin(OfflineCommands.class).getDataFolder();
             File directory = new File(OfflineCommands.getPlugin(OfflineCommands.class).getDataFolder(), "logs/");
+            if (!pluginDirectory.exists() && !pluginDirectory.mkdirs()) {
+                return;
+            }
             if (!directory.exists() && !directory.mkdirs()) {
                 return;
             }
@@ -79,7 +83,7 @@ public class OfflineCommandsUtils {
             logger.setUseParentHandlers(false);
             logger.setLevel(Level.INFO);
 
-            logger.log(Level.INFO, message);
+            logger.log(Level.INFO, message + "\n");
             fileHandler.close();
         } catch (IOException e) {
             e.printStackTrace();
