@@ -2,7 +2,7 @@ name: OfflineCommands
 version: ${project.version}
 main: io.github.jochyoua.offlinecommands.OfflineCommands
 api-version: 1.13
-authors: [ Jochyoua ]
+authors: [ Jochyoua, Phoenix616 ]
 softdepend: [ PlaceHolderAPI ]
 description: A plugin to execute commands when a player joins
 website: https://jochyoua.github.io
