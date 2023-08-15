@@ -52,21 +52,6 @@ public class UserStorage implements ConfigurationSerializable {
     }
 
     /**
-     * A method that removes a command from the commands list of the user storage.
-     * It takes a string identifier as a parameter, and uses the removeIf method of the list to filter out the command that matches the identifier.
-     * It also uses the equalsIgnoreCase method of the string class to compare the identifiers.
-     *
-     * @param identifier a string identifier that identifies the command to be removed
-     */
-    public void removeCommand(String identifier) {
-        if (identifier.equalsIgnoreCase("*")) {
-            commands.clear();
-        } else {
-            commands.removeIf(offlineCommand -> offlineCommand.getIdentifier().equalsIgnoreCase(identifier));
-        }
-    }
-
-    /**
      * A method that returns a command storage that matches a given identifier from the commands list of the user storage.
      * It uses a lambda stream to process the commands list and find the matching command storage.
      * It also uses the equalsIgnoreCase method of the string class to compare the identifiers.

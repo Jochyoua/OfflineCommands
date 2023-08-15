@@ -52,12 +52,26 @@ public class ModifyCommands {
             OfflineCommandsUtils.sendMessage(sender, applyChatColors(String.format(offlineCommands.getConfig().getString(VARIABLES_PATH + ".player-does-not-exist"), args[1], args[2])), feedback);
             return false;
         }
-        CommandStorage commandStorage = userStorage.getCommand(args[2]);
-        if (commandStorage == null) {
-            OfflineCommandsUtils.sendMessage(sender, (applyChatColors(offlineCommands.getConfig().getString(VARIABLES_PATH + ".identifier-not-found"))), feedback);
-            return false;
+
+        List<CommandStorage> commandStorageList = new ArrayList<>(userStorage.getCommands());
+
+        if (!args[2].equalsIgnoreCase("*")) {
+            CommandStorage commandStorage = userStorage.getCommand(args[2]);
+            if (commandStorage == null) {
+                OfflineCommandsUtils.sendMessage(sender, (applyChatColors(offlineCommands.getConfig().getString(VARIABLES_PATH + ".identifier-not-found"))), feedback);
+                return false;
+            }
+            commandStorageList.removeIf(offlineCommand -> offlineCommand.getIdentifier().equalsIgnoreCase(args[2]));
+        } else {
+            if (!userStorage.getCommands().isEmpty()) {
+                commandStorageList.clear();
+            } else {
+                OfflineCommandsUtils.sendMessage(sender, (applyChatColors(offlineCommands.getConfig().getString(VARIABLES_PATH + ".identifier-not-found"))), feedback);
+                return false;
+            }
         }
-        userStorage.removeCommand(commandStorage.getIdentifier());
+
+        userStorage.setCommands(commandStorageList);
         offlineCommands.getUserStorageData().modifyUsersData(StorageUtils.addOrUpdateUserList(offlineCommands.getUserStorageData().getUserStorageConfig(), userStorage));
 
         OfflineCommandsUtils.sendMessage(sender, (applyChatColors(offlineCommands.getConfig().getString(VARIABLES_PATH + ".identifier-found"))), feedback);
@@ -133,25 +147,15 @@ public class ModifyCommands {
         }
 
 
-        OfflineCommandsUtils.sendMessage(sender, applyChatColors(String.format(offlineCommands.getConfig().getString(VARIABLES_PATH + ".new-command-added"),
-                Optional.ofNullable(userStorage.getUsername()).orElse(userData.getValue().getName()),
-                commandStorage.getIdentifier(),
-                commandStorage.getExecutor(),
-                commandStorage.getCommandValue(),
-                commandStorage.getSoundStorage() == null ? "UNSET" : commandStorage.getSoundStorage().getSound().toString(),
-                commandStorage.getRequiredPermission().isBlank() ? "UNSET" : commandStorage.getRequiredPermission())), feedback);
+        OfflineCommandsUtils.sendMessage(sender, applyChatColors(String.format(offlineCommands.getConfig().getString(VARIABLES_PATH + ".new-command-added"), Optional.ofNullable(userStorage.getUsername()).orElse(userData.getValue().getName()), commandStorage.getIdentifier(), commandStorage.getExecutor(), commandStorage.getCommandValue(), commandStorage.getSoundStorage() == null ? "UNSET" : commandStorage.getSoundStorage().getSound().toString(), commandStorage.getRequiredPermission().isBlank() ? "UNSET" : commandStorage.getRequiredPermission())), feedback);
         return true;
     }
 
-    public SoundStorage getSoundStorageFromString(String soundRaw, String pitchRaw, String volumeRaw){
+    public SoundStorage getSoundStorageFromString(String soundRaw, String pitchRaw, String volumeRaw) {
         SoundStorage soundStorage = null;
         if (soundRaw != null) {
             try {
-                soundStorage = SoundStorage.builder()
-                        .sound(Sound.valueOf(soundRaw))
-                        .pitch(pitchRaw == null ? DEFAULT_SOUND.getPitch() : Float.parseFloat(pitchRaw))
-                        .pitch(volumeRaw == null ? DEFAULT_SOUND.getVolume() : Float.parseFloat(volumeRaw))
-                        .build();
+                soundStorage = SoundStorage.builder().sound(Sound.valueOf(soundRaw)).pitch(pitchRaw == null ? DEFAULT_SOUND.getPitch() : Float.parseFloat(pitchRaw)).pitch(volumeRaw == null ? DEFAULT_SOUND.getVolume() : Float.parseFloat(volumeRaw)).build();
             } catch (IllegalArgumentException e) {
                 offlineCommands.getLogger().warning("Failed to convert sound input into SoundStorage: " + e.getMessage());
             }
