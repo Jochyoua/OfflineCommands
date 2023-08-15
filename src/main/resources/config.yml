@@ -3,13 +3,14 @@
 
 settings:
   execute-if-online: true
-  use-offline-player-fallback: true
   only-allow-console-to-add-commands: true
   delay-execute-after-join-ticks: 20
+  page-size: 5
 
 variables:
   only-console: "&cSorry, only console may execute this command."
   currently-online: "&7That user is currently online, executing now."
+  reload-successful: "&7Successfully reloaded config!"
   incorrect-syntax: |-
     &cYou have provided incorrect syntax.
     &7/offlinecommands help
@@ -19,34 +20,45 @@ variables:
     &cAttempt to use UUID if possible.
   new-command-added: |-
     &7New command has successfully been added.
-    &7  ├─ &8[&e{uuid}&8]
-    &7  │  &8[Executor&8]&7: {executor}
-    &7  │  &3&o{identifier} &r&f{command}
-  identifier-search: "&7Removing identifier &3{identifier}&7 for uuid &e{uuid}"
+    &7  ├──&8User&7: %1$s
+    &7  ├─ &8[Identifier]&7: %2$s
+    &7  │  &8[Executor&8]&7: %3$s
+    &7  │  &8[Command]&7: %4$s
+    &7  │  &8[Sound]&7: %5$s
+    &7  │  &8[Permission]&7: %6$s
+  identifier-search: "&7Removing identifier &3%1$s&7 for uuid &e%2$s"
   identifier-not-found: "&cIdentifier does not exist."
   identifier-found: "&3Identifier has been removed."
   no-users-found: |-
     &cThere are no existing users under these search parameters.
   list-command-header: "&7OfflineCommands's List Page&7:"
-  list-user-uuid: "&7  ├─ &8[&e{uuid}&8]"
+  list-user-uuid: "&7  ├─ &8[&e%1$s&8]"
   list-no-commands-found: |-
-    &cThis user has no commands to execute.
-    &cPlease ensure sure your config is set-up correctly.
+    &7  │  &3&oThis user has no commands to execute.
   list-command-format: |-
-    &7  │  &8[Executor&8]&7: {executor}
-    &7  │  &3&o{identifier} &r&f{command}
-    &7  │
+    &7  ├─ &8[Identifier]&7: %1$s
+    &7  │  &8[Executor&8]&7: %2$s
+    &7  │  &8[Command]&7: %3$s
+    &7  │  &8[Sound]&7: %4$s
+    &7  │  &8[Permission]&7: %5$s
+  list-command-footer: "&7Page &8(&3%1$d/%2$d&8) &3> &7/offlinecommands list &3%3$d"
+  list-command-footer-end-of-list: "&7Page &8(&3%1$d/%2$d&8) &3> &7End of list!"
+  list-invalid-page-number: "&cThe page number %1$d is invalid. Please enter a number between 1 and %2$d."
   help-command-format: |-
     &7OfflineCommands's Help Page&7:
     &7CHEATSHEET:
      - &7<&6arg&7> &f= &7required arg
      - &7(&6arg&7) &f= &7optional arg
+     - &6no-feedback &f= &7no response
     &7  │
     &7  ├─ &8[&eofflinecommands list&8]
     &7  │  &fUsed to list all current users and their commands
     &7  │
-    &7  ├─ &8[&eofflinecommands add &8<&6user="username/UUID"&8> &8<&6command="command"&8> &8(&6executor="CONSOLE/PLAYER"&8)]
+    &7  ├─ &8[&eofflinecommands add &8<&6user="username/UUID"&8> &8<&6command="command"&8> &8(&6executor="CONSOLE/PLAYER"&8) &8(&6permission="permission"&8) &8(&6sound="BLOCK_NOTE_BLOCK_CHIME"&8)]
     &7  │  &fUsed add a command for a user.
     &7  │
-    &7  ├─ &8[&eofflinecommands remove &8<&6UUID&8> &8<&6identifier&8>]
+    &7  ├─ &8[&eofflinecommands remove &8<&6username/UUID&8> &8<&6identifier&8>]
     &7  │  &fUsed to remove a command from the config.
+    &7  │
+    &7  ├─ &8[&eofflinecommands reload&8]
+    &7  │  &fUsed to re-load config.yml file into memory
