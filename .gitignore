@@ -110,6 +110,25 @@ buildNumber.properties
 .mvn/wrapper/maven-wrapper.jar
 .flattened-pom.xml
 
-# Common working directory
-run/
-.run
+
+*.class
+
+*.ctxt
+
+
+*.jar
+*.war
+*.ear
+
+hs_err_pid*
+
+
+.gradle
+/build/
+/target
+/server/
+/.idea/
+/.github/
+build/tmp/jar/MANIFEST.MF
+gradle.properties
+gradle/wrapper/gradle-wrapper.properties

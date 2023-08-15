@@ -1,0 +1,73 @@
+plugins {
+    id 'java-library'
+    id 'io.freefair.lombok' version '6.2.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.0'
+}
+
+group = 'io.github.jochyoua'
+version = '1.0'
+
+ext {
+    lombokVersion = '1.18.28'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+    maven {
+        url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/'
+    }
+}
+
+dependencies {
+    implementation "org.projectlombok:lombok:${lombokVersion}"
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.1'
+    implementation "com.destroystokyo.paper:paper-api:1.13-R0.1-SNAPSHOT"
+    implementation 'me.clip:placeholderapi:2.11.3'
+
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    testImplementation "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+}
+
+lombok {
+    version = lombokVersion
+}
+
+def targetJavaVersion = 17
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release = targetJavaVersion
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
