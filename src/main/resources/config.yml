@@ -5,7 +5,7 @@ settings:
   execute-if-online: true
   only-allow-console-to-add-commands: true
   delay-execute-after-join-ticks: 20
-  page-size: 5
+  page-size: 2
 
 variables:
   only-console: "&cSorry, only console may execute this command."

@@ -1,74 +1,53 @@
 package io.github.jochyoua.offlinecommands.listeners;
 
 import io.github.jochyoua.offlinecommands.OfflineCommands;
-import io.github.jochyoua.offlinecommands.OfflineCommandsUtils;
+import io.github.jochyoua.offlinecommands.storage.StorageUtils;
+import io.github.jochyoua.offlinecommands.storage.UserStorage;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static io.github.jochyoua.offlinecommands.OfflineCommandsUtils.prepareCommand;
+import static io.github.jochyoua.offlinecommands.VariableConstants.SETTINGS_PATH;
 
 public class PlayerConnectionListener implements Listener {
-    private final OfflineCommands plugin;
+    private final OfflineCommands offlineCommands;
 
     public PlayerConnectionListener(OfflineCommands plugin) {
-        this.plugin = plugin;
+        this.offlineCommands = plugin;
     }
 
-    @EventHandler
+    /**
+     * Handles the PlayerJoinEvent with the lowest priority.
+     * Schedules a task to run later that checks the user storage data for the player who joined and executes any commands stored for them.
+     * If the user storage data is null, creates a new user storage object and adds it to the user storage data.
+     * If the user storage data is not null, removes it from the user storage data and runs all the commands stored for the player.
+     *
+     * @param playerJoinEvent the event that occurred when a player joined the server
+     * @see org.bukkit.event.player.PlayerJoinEvent
+     * @see io.github.jochyoua.offlinecommands.storage.UserStorage
+     * @see io.github.jochyoua.offlinecommands.storage.StorageUtils
+     */
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent playerJoinEvent) {
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        Bukkit.getScheduler().runTaskLater(offlineCommands, () -> {
             Player player = playerJoinEvent.getPlayer();
+            UserStorage userStorage = StorageUtils.getUser(offlineCommands.getUserStorageData().getUserStorageConfig(), player.getUniqueId());
 
-            if(!player.isOnline()){
+            if (!player.isOnline()) {
                 return;
             }
 
-            StringBuilder debugStringBuilder = new StringBuilder();
-
-            for (Map.Entry<String, Boolean> entrySet :
-                    getCommands(player).entrySet()) {
-                debugStringBuilder.append("\n");
-                debugStringBuilder.append(entrySet.getKey()).append(":").append(" ").append(entrySet.getValue());
+            if (userStorage == null) {
+                offlineCommands.getUserStorageData().modifyUsersData((StorageUtils.addOrUpdateUserList(offlineCommands.getUserStorageData().getUserStorageConfig(), UserStorage.builder().uuid(player.getUniqueId()).username(player.getName()).build())));
+                return;
             }
 
-            if (debugStringBuilder.length() != 0) {
-                debugStringBuilder.append("\n");
-                OfflineCommandsUtils.logMessage("Executing commands for " + player.getName() + "\n" + debugStringBuilder, "debug");
-            }
+            offlineCommands.getUserStorageData().modifyUsersData((StorageUtils.removeUserFromUserList(offlineCommands.getUserStorageData().getUserStorageConfig(), player.getUniqueId())));
 
-            plugin.getConfig().set("users." + player.getUniqueId(), null);
-            plugin.saveConfig();
-        }, plugin.getConfig().getInt("settings.delay-execute-after-join-ticks", 20));
-    }
-
-
-    private Map<String, Boolean> getCommands(Player player) {
-        Map<String, Boolean> commands = new HashMap<>();
-        String path = "users." + player.getUniqueId() + ".commands-to-execute";
-
-        ConfigurationSection commandConfigurationSection = plugin.getConfig().getConfigurationSection(path);
-        if (commandConfigurationSection == null) {
-            return commands;
-        }
-
-        for (String pathEntry :
-                commandConfigurationSection.getKeys(false)) {
-            String command = plugin.getConfig().getString(path + "." + pathEntry + ".command");
-            String executor = plugin.getConfig().getString(path + "." + pathEntry + ".execute_as");
-            if (command != null && executor != null) {
-                command = prepareCommand(command, player);
-                commands.put(command,
-                        Bukkit.dispatchCommand(executor.equalsIgnoreCase("CONSOLE") ?
-                                Bukkit.getConsoleSender() : player, command));
-            }
-        }
-        return commands;
+            userStorage.runAllCommands(player);
+        }, offlineCommands.getConfig().getInt(SETTINGS_PATH + ".delay-execute-after-join-ticks", 20));
     }
 }
