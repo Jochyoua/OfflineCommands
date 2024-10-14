@@ -127,6 +127,7 @@ hs_err_pid*
 /build/
 /target
 /server/
+/offlinecommands test server/
 /.idea/
 /.github/
 build/tmp/jar/MANIFEST.MF

@@ -1,7 +1,7 @@
 package io.github.jochyoua.offlinecommands.listeners;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.jochyoua.offlinecommands.OfflineCommands;
-import io.github.jochyoua.offlinecommands.storage.StorageUtils;
 import io.github.jochyoua.offlinecommands.storage.UserStorage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -9,6 +9,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+
+import java.sql.SQLException;
+import java.util.UUID;
+import java.util.logging.Level;
 
 import static io.github.jochyoua.offlinecommands.VariableConstants.SETTINGS_PATH;
 
@@ -26,28 +30,42 @@ public class PlayerConnectionListener implements Listener {
      * If the user storage data is not null, removes it from the user storage data and runs all the commands stored for the player.
      *
      * @param playerJoinEvent the event that occurred when a player joined the server
-     * @see org.bukkit.event.player.PlayerJoinEvent
-     * @see io.github.jochyoua.offlinecommands.storage.UserStorage
-     * @see io.github.jochyoua.offlinecommands.storage.StorageUtils
      */
     @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent playerJoinEvent) {
-        Bukkit.getScheduler().runTaskLater(offlineCommands, () -> {
-            Player player = playerJoinEvent.getPlayer();
-            UserStorage userStorage = StorageUtils.getUser(offlineCommands.getUserStorageData().getUserStorageConfig(), player.getUniqueId());
+        Bukkit.getScheduler().runTaskLater(offlineCommands, () -> handlePlayerJoin(playerJoinEvent.getPlayer()), offlineCommands.getConfig().getInt(SETTINGS_PATH + ".delay-execute-after-join-ticks", 20));
+    }
 
-            if (!player.isOnline()) {
-                return;
+    /**
+     * Handles the logic for a player joining the server.
+     *
+     * @param player the player who joined the server
+     */
+    private void handlePlayerJoin(Player player) {
+        UserStorage userStorage = getUserStorage(player.getUniqueId());
+        if (userStorage == null || !player.isOnline()) {
+            return;
+        }
+
+        userStorage.runAllCommands(player);
+
+        try {
+            if (userStorage.getCommands().isEmpty()) {
+                offlineCommands.getStorageManager().removeUser(player.getUniqueId());
+            } else {
+                offlineCommands.getStorageManager().addOrUpdateUser(userStorage);
             }
+        } catch (SQLException | JsonProcessingException e) {
+            offlineCommands.getDebugLogger().log(Level.WARNING, "Failed to update user in database, fix error before continuing: " + e.getMessage());
+        }
+    }
 
-            if (userStorage == null) {
-                offlineCommands.getUserStorageData().modifyUsersData((StorageUtils.addOrUpdateUserList(offlineCommands.getUserStorageData().getUserStorageConfig(), UserStorage.builder().uuid(player.getUniqueId()).username(player.getName()).build())));
-                return;
-            }
-
-            offlineCommands.getUserStorageData().modifyUsersData((StorageUtils.removeUserFromUserList(offlineCommands.getUserStorageData().getUserStorageConfig(), player.getUniqueId())));
-
-            userStorage.runAllCommands(player);
-        }, offlineCommands.getConfig().getInt(SETTINGS_PATH + ".delay-execute-after-join-ticks", 20));
+    private UserStorage getUserStorage(UUID uuid) {
+        try {
+            return offlineCommands.getStorageManager().getUser(uuid);
+        } catch (SQLException | JsonProcessingException e) {
+            offlineCommands.getDebugLogger().log(Level.WARNING, "Failed to get user from database, fix error before continuing: " + e.getMessage());
+            return null;
+        }
     }
 }

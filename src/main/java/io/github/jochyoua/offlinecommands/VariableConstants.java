@@ -21,7 +21,6 @@ public class VariableConstants {
     public static final String SETTINGS_PATH = "settings";
     public static final String VARIABLES_PATH = "variables";
     public static final String USER_KEY = "user";
-    public static final String USERS_KEY = "users";
     public static final String EXECUTOR_KEY = "executor";
     public static final String COMMAND_KEY = "command";
 

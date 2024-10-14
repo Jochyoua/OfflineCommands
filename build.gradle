@@ -1,15 +1,17 @@
 plugins {
     id 'java-library'
     id 'io.freefair.lombok' version '6.2.0'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.6.20'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 group = 'io.github.jochyoua'
-version = '2.0'
+version = '3.0'
 
 ext {
     lombokVersion = '1.18.28'
 }
+
 
 repositories {
     mavenCentral()
@@ -27,35 +29,30 @@ repositories {
 }
 
 dependencies {
-    implementation "org.projectlombok:lombok:${lombokVersion}"
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.1'
-    implementation "com.destroystokyo.paper:paper-api:1.13-R0.1-SNAPSHOT"
-    implementation 'me.clip:placeholderapi:2.11.3'
+    implementation 'org.xerial:sqlite-jdbc:3.42.0.1'
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    compileOnly "com.destroystokyo.paper:paper-api:1.13-R0.1-SNAPSHOT"
+    compileOnly 'me.clip:placeholderapi:2.11.6'
 
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     testImplementation "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
 
 lombok {
     version = lombokVersion
 }
 
-def targetJavaVersion = 17
+def targetJavaVersion = 8
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
     targetCompatibility = javaVersion
     if (JavaVersion.current() < javaVersion) {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release = targetJavaVersion
     }
 }
 

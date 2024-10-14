@@ -2,10 +2,11 @@
 # Github: https://github.com/Jochyoua/OfflineCommands
 
 settings:
-  execute-if-online: true
-  only-allow-console-to-add-commands: true
-  delay-execute-after-join-ticks: 20
-  page-size: 2
+  execute-if-online: true                # Execute commands if the user is online
+  only-allow-console-to-add-commands: true  # Only allow the console to add commands
+  delay-execute-after-join-ticks: 20      # Delay in ticks before executing commands after a player joins
+  page-size: 2                            # Number of items per page for paginated lists
+  debug-to-file: true                     # Debug all messages into files under OfflineCommands/debug
 
 variables:
   only-console: "&cSorry, only console may execute this command."
@@ -14,51 +15,42 @@ variables:
   incorrect-syntax: |-
     &cYou have provided incorrect syntax.
     &7/offlinecommands help
-  player-does-not-exist: |-
-    &cThe player you provided does not exist.
-    &cPlease make sure to provide a valid user.
-    &cAttempt to use UUID if possible.
+  player-failed-to-update: |-
+    &cFailed to update the user.
+    &cPlease check the console for more details.
   new-command-added: |-
     &7New command has successfully been added.
-    &7  ├──&8User&7: %1$s
-    &7  ├─ &8[Identifier]&7: %2$s
-    &7  │  &8[Executor&8]&7: %3$s
-    &7  │  &8[Command]&7: %4$s
-    &7  │  &8[Sound]&7: %5$s
-    &7  │  &8[Permission]&7: %6$s
+    &7  |&m--&r &8User&7: %1$s
+    &7  |&m--&r &8[Identifier]&7: %2$s
   identifier-search: "&7Removing identifier &3%1$s&7 for uuid &e%2$s"
   identifier-not-found: "&cIdentifier does not exist."
   identifier-found: "&3Identifier has been removed."
   no-users-found: |-
     &cThere are no existing users under these search parameters.
   list-command-header: "&7OfflineCommands's List Page&7:"
-  list-user-uuid: "&7  ├─ &8[&e%1$s&8]"
+  list-commandInfo-header: "&7OfflineCommands's Command Information&7:"
+  list-user-uuid: "&7  |&m--&r &8[&e%1$s&8]"
   list-no-commands-found: |-
-    &7  │  &3&oThis user has no commands to execute.
-  list-command-format: |-
-    &7  ├─ &8[Identifier]&7: %1$s
-    &7  │  &8[Executor&8]&7: %2$s
-    &7  │  &8[Command]&7: %3$s
-    &7  │  &8[Sound]&7: %4$s
-    &7  │  &8[Permission]&7: %5$s
+    &7  |&m--&r &3&oThis user has no commands to execute.
+  list-command-format: "&7  |&m--&r &8[%1$s]&7: %2$s"
   list-command-footer: "&7Page &8(&3%1$d/%2$d&8) &3> &7/offlinecommands list &3%3$d"
   list-command-footer-end-of-list: "&7Page &8(&3%1$d/%2$d&8) &3> &7End of list!"
   list-invalid-page-number: "&cThe page number %1$d is invalid. Please enter a number between 1 and %2$d."
   help-command-format: |-
-    &7OfflineCommands's Help Page&7:
+    &7&m----&r &eOfflineCommands Help Page&7 &m----
     &7CHEATSHEET:
-     - &7<&6arg&7> &f= &7required arg
-     - &7(&6arg&7) &f= &7optional arg
+     - &7<&6arg&7> &f= &7required argument
+     - &7(&6arg&7) &f= &7optional argument
      - &6no-feedback &f= &7no response
-    &7  │
-    &7  ├─ &8[&eofflinecommands list&8]
-    &7  │  &fUsed to list all current users and their commands
-    &7  │
-    &7  ├─ &8[&eofflinecommands add &8<&6user="username/UUID"&8> &8<&6command="command"&8> &8(&6executor="CONSOLE/PLAYER"&8) &8(&6permission="permission"&8) &8(&6sound="BLOCK_NOTE_BLOCK_CHIME"&8)]
-    &7  │  &fUsed add a command for a user.
-    &7  │
-    &7  ├─ &8[&eofflinecommands remove &8<&6username/UUID&8> &8<&6identifier&8>]
-    &7  │  &fUsed to remove a command from the config.
-    &7  │
-    &7  ├─ &8[&eofflinecommands reload&8]
-    &7  │  &fUsed to re-load config.yml file into memory
+    &7Commands:
+     - &8[&eofflinecommands list&8]&7:
+       &fList all current users and their commands
+     - &8[&eofflinecommands info <identifier>&8]&7:
+       &fShow information about a specific command
+     - &8[&eofflinecommands add &8<&6user="username/UUID"&8> &8<&6command="command"&8> &8(&6executor="CONSOLE/PLAYER"&8) &8(&6permission="permission"&8) &8(&6sound="BLOCK_NOTE_BLOCK_CHIME"&8)]&7:
+       &fAdd a command for a user
+     - &8[&eofflinecommands remove &8<&6username/UUID&8> &8<&6identifier&8>]&7:
+       &fRemove a command from the config
+     - &8[&eofflinecommands reload&8]&7:
+       &fReload the config.yml file into memory
+    &7&m---------------------------------

@@ -1,11 +1,11 @@
 package io.github.jochyoua.offlinecommands.commands;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.jochyoua.offlinecommands.OfflineCommands;
 import io.github.jochyoua.offlinecommands.OfflineCommandsUtils;
 import io.github.jochyoua.offlinecommands.commands.subcommands.InfoCommands;
 import io.github.jochyoua.offlinecommands.commands.subcommands.ModifyCommands;
 import io.github.jochyoua.offlinecommands.storage.CommandStorage;
-import io.github.jochyoua.offlinecommands.storage.StorageUtils;
 import io.github.jochyoua.offlinecommands.storage.UserStorage;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,15 +13,17 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.util.StringUtil;
 
+import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static io.github.jochyoua.offlinecommands.OfflineCommandsUtils.applyChatColors;
-import static io.github.jochyoua.offlinecommands.VariableConstants.USERS_KEY;
 import static io.github.jochyoua.offlinecommands.VariableConstants.VARIABLES_PATH;
 
 public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
-    private static final List<String> BASE_ARGS = Arrays.asList("help", "list", "add", "remove", "reload", "no-feedback");
-    private static final List<String> ADD_ARGS = Arrays.asList("user=\"\"", "command=\"\"", "executor=\"\"", "permission=\"\"", "message=\"\"");
+    private static final List<String> BASE_ARGS = Arrays.asList("help", "list", "add", "remove", "info", "reload", "no-feedback");
+    private static final List<String> ADD_ARGS = Arrays.asList("user=\"\"", "command=\"\"", "executor=\"\"", "permission=\"\"", "message=\"\"", "recurring=\"\"");
 
     private final OfflineCommands offlineCommands;
 
@@ -29,17 +31,6 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
         this.offlineCommands = plugin;
     }
 
-    /**
-     * Executes the offline commands plugin subcommands based on the command arguments.
-     * The subcommands include list, add, remove, reload, and help.
-     * The method will also handle invalid or missing arguments and provide feedback messages to the sender.
-     *
-     * @param sender  the command sender, who can be a console or a player
-     * @param command the command that was executed
-     * @param label   the alias of the command that was used
-     * @param args    a variable-length array of strings containing the command arguments
-     * @return true if the subcommand was executed successfully, false otherwise
-     */
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
@@ -52,18 +43,14 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
         boolean feedback = !(String.join(" ", args).contains("no-feedback"));
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "list":
-                int page = 1;
-                if (args.length == 2) {
-                    try {
-                        page = Integer.parseInt(args[1]);
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
+                int page = parsePageNumber(args);
                 return infoCommands.showListOfCommands(sender, feedback, page);
+            case "info":
+                return args.length == 2 && infoCommands.showFullCommandInfo(sender, feedback, args[1]);
             case "add":
-                return modifyCommands.addCommandToConfig(sender, feedback, args);
+                return modifyCommands.addCommandToDatabase(sender, feedback, args);
             case "remove":
-                return modifyCommands.removeCommandFromConfig(sender, feedback, args);
+                return modifyCommands.removeCommandfromDatabase(sender, feedback, args);
             case "reload":
                 return reloadCommand(sender, feedback);
             case "help":
@@ -73,9 +60,27 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
     }
 
     /**
-     * Returns the formatted help message for the OfflineCommands plugin.
+     * Parses the page number from the command arguments.
      *
-     * @return the formatted help message as a string
+     * @param args the command arguments
+     * @return the parsed page number or 1 if parsing fails
+     */
+    private int parsePageNumber(String[] args) {
+        if (args.length == 2) {
+            try {
+                return Integer.parseInt(args[1]);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return 1;
+    }
+
+    /**
+     * Sends the help command message to the sender.
+     *
+     * @param sender   the sender of the command
+     * @param feedback whether to send feedback messages to the sender
+     * @return always returns true
      */
     private boolean showHelpCommandToSender(CommandSender sender, boolean feedback) {
         OfflineCommandsUtils.sendMessage(sender, applyChatColors(offlineCommands.getConfig().getString(VARIABLES_PATH + ".help-command-format")), feedback);
@@ -83,11 +88,11 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
     }
 
     /**
-     * Reloads the plugin and sends a success message to the sender.
+     * Reloads the plugin configuration and sends a success message to the sender.
      *
-     * @param sender   the command sender who issued the reload command
-     * @param feedback whether to send feedback messages to the sender or not
-     * @return true if the reload was successful, false otherwise
+     * @param sender   the sender of the command
+     * @param feedback whether to send feedback messages to the sender
+     * @return always returns true
      */
     private boolean reloadCommand(CommandSender sender, boolean feedback) {
         OfflineCommandsUtils.sendMessage(sender, applyChatColors(offlineCommands.getConfig().getString(VARIABLES_PATH + ".reload-successful")), feedback);
@@ -95,18 +100,6 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    /**
-     * Provides a list of possible completions for a command argument.
-     * The method will copy partial matches from different sources to the completions list, depending on the number and value of the arguments.
-     * The sources include predefined lists of base arguments and add arguments, and dynamic lists of usernames and identifiers from the configuration file.
-     * The method will also handle exceptions and invalid inputs when parsing UUIDs or getting user storage objects.
-     *
-     * @param sender  the command sender, who can be a console or a player
-     * @param command the command that was executed
-     * @param alias   the alias of the command that was used
-     * @param args    a variable-length array of strings containing the command arguments
-     * @return a list of strings that match the partial argument, or an empty list if none
-     */
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         final List<String> completions = new ArrayList<>();
@@ -115,13 +108,9 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
         if (length == 1) {
             handleBaseArgs(args[0], completions);
         } else if (length == 2) {
-            handleAddOrRemoveArgs(args[0], args[1], completions);
+            handleSecondArg(args, completions);
         } else if (length == 3) {
-            if (args[0].equalsIgnoreCase("add")) {
-                handleAddOrRemoveArgs(args[0], args[2], completions);
-            } else {
-                handleRemoveIdentifierArgs(args[0], args[1], args[2], completions);
-            }
+            handleThirdArg(args, completions);
         } else {
             return ADD_ARGS;
         }
@@ -131,64 +120,131 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
     }
 
     /**
-     * Handles the case when there is only one argument.
-     * Copies the partial matches from the predefined list of base arguments to the completions list.
+     * Handles tab completion for the base arguments.
      *
-     * @param arg         the first and only argument, which should be a partial match of a base argument
-     * @param completions the list of strings that will store the possible completions
+     * @param arg         the current argument
+     * @param completions the list to store completions
      */
     private void handleBaseArgs(String arg, List<String> completions) {
         StringUtil.copyPartialMatches(arg, BASE_ARGS, completions);
     }
 
     /**
-     * Handles the case when there are two arguments and the first one is add or remove.
-     * Copies the partial matches from different sources to the completions list, depending on the value of the second argument.
-     * The sources include predefined lists of add arguments and dynamic lists of usernames from the configuration file.
+     * Handles tab completion for the second argument based on the first argument.
      *
-     * @param arg1        the first argument, which should be either add or remove
-     * @param arg2        the second argument, which should be a partial match of an add argument or a username
-     * @param completions the list of strings that will store the possible completions
+     * @param args        the command arguments
+     * @param completions the list to store completions
+     */
+    private void handleSecondArg(String[] args, List<String> completions) {
+        if (args[0].equalsIgnoreCase("info")) {
+            handleInfoArgs(args[1], completions);
+        }
+        handleAddOrRemoveArgs(args[0], args[1], completions);
+    }
+
+    /**
+     * Handles tab completion for the third argument based on the first two arguments.
+     *
+     * @param args        the command arguments
+     * @param completions the list to store completions
+     */
+    private void handleThirdArg(String[] args, List<String> completions) {
+        if (args[0].equalsIgnoreCase("add")) {
+            handleAddOrRemoveArgs(args[0], args[2], completions);
+        } else {
+            handleRemoveIdentifierArgs(args[0], args[1], args[2], completions);
+        }
+    }
+
+    /**
+     * Handles tab completion for the add or remove arguments.
+     *
+     * @param arg1        the first argument
+     * @param arg2        the second argument
+     * @param completions the list to store completions
      */
     private void handleAddOrRemoveArgs(String arg1, String arg2, List<String> completions) {
         if (arg1.equalsIgnoreCase("add")) {
             StringUtil.copyPartialMatches(arg2, ADD_ARGS, completions);
         } else if (arg1.equalsIgnoreCase("remove")) {
-            List<UserStorage> userStorageList = (List<UserStorage>) offlineCommands.getUserStorageData().getUserStorageConfig().getList(USERS_KEY);
-            List<String> usernameList = userStorageList.stream().map(userStorage -> userStorage.getUsername() == null ? userStorage.getUuid().toString() : userStorage.getUsername()).toList();
-            if (!usernameList.isEmpty()) {
-                StringUtil.copyPartialMatches(arg2, usernameList, completions);
+            handleRemoveArgs(arg2, completions);
+        }
+    }
+
+    /**
+     * Handles tab completion for the remove arguments.
+     *
+     * @param arg2        the second argument
+     * @param completions the list to store completions
+     */
+    private void handleRemoveArgs(String arg2, List<String> completions) {
+        try {
+            List<UserStorage> userStorageList = offlineCommands.getStorageManager().getUserStorageList();
+            List<String> usernameList = userStorageList.stream()
+                    .map(userStorage -> Optional.ofNullable(userStorage.getUsername()).orElse(userStorage.getUuid().toString()))
+                    .collect(Collectors.toList());
+            StringUtil.copyPartialMatches(arg2, usernameList, completions);
+        } catch (SQLException | JsonProcessingException e) {
+            offlineCommands.getDebugLogger().log(Level.WARNING, "Failed to get data from database, fix error before continuing: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handles tab completion for the info arguments.
+     *
+     * @param arg2        the second argument
+     * @param completions the list to store completions
+     */
+    private void handleInfoArgs(String arg2, List<String> completions) {
+        try {
+            List<UserStorage> userStorageList = offlineCommands.getStorageManager().getUserStorageList();
+            List<String> allCommands = userStorageList.stream()
+                    .flatMap(userStorage -> userStorage.getCommands().stream())
+                    .map(CommandStorage::getIdentifier)
+                    .collect(Collectors.toList());
+            StringUtil.copyPartialMatches(arg2, allCommands, completions);
+        } catch (SQLException | JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handles tab completion for the remove identifier arguments.
+     *
+     * @param arg1        the first argument
+     * @param arg2        the second argument
+     * @param arg3        the third argument
+     * @param completions the list to store completions
+     */
+    private void handleRemoveIdentifierArgs(String arg1, String arg2, String arg3, List<String> completions) {
+        if (arg1.equalsIgnoreCase("remove")) {
+            try {
+                UUID uuid = getUUIDFromString(arg2);
+                UserStorage userStorage = offlineCommands.getStorageManager().getUser(uuid);
+                if (userStorage != null) {
+                    List<String> identifierList = userStorage.getCommands().stream()
+                            .map(CommandStorage::getIdentifier)
+                            .collect(Collectors.toList());
+                    identifierList.add("*");
+                    StringUtil.copyPartialMatches(arg3, identifierList, completions);
+                }
+            } catch (SQLException | JsonProcessingException e) {
+                offlineCommands.getDebugLogger().log(Level.WARNING, "Failed to get user from database, fix error before continuing: " + e.getMessage());
             }
         }
     }
 
     /**
-     * Handles the case when there are three arguments and the first one is remove.
-     * Copies the partial matches from the dynamic list of identifiers from the configuration file to the completions list, depending on the value of the third argument.
-     * The method also parses the UUID from the second argument and handles exceptions and invalid inputs.
+     * Retrieves a UUID from a string.
      *
-     * @param arg1        the first argument, which should be remove
-     * @param arg2        the second argument, which should be a valid UUID or a username
-     * @param arg3        the third argument, which should be a partial match of an identifier
-     * @param completions the list of strings that will store the possible completions
+     * @param arg the string argument
+     * @return the UUID
      */
-    private void handleRemoveIdentifierArgs(String arg1, String arg2, String arg3, List<String> completions) {
-        if (arg1.equalsIgnoreCase("remove")) {
-            UUID uuid;
-            try {
-                uuid = UUID.fromString(arg2);
-            } catch (IllegalArgumentException ignored) {
-                uuid = OfflineCommandsUtils.getDataFromUsername(arg2).getKey();
-            }
-            UserStorage userStorage = StorageUtils.getUser(offlineCommands.getUserStorageData().getUserStorageConfig(), uuid);
-            if (userStorage != null) {
-                List<CommandStorage> commands = userStorage.getCommands();
-                List<String> identifierList = new ArrayList<>(commands.stream().map(CommandStorage::getIdentifier).toList());
-                if(!identifierList.isEmpty()){
-                    identifierList.add("*");
-                }
-                StringUtil.copyPartialMatches(arg3, identifierList, completions);
-            }
+    private UUID getUUIDFromString(String arg) {
+        try {
+            return UUID.fromString(arg);
+        } catch (IllegalArgumentException ignored) {
+            return OfflineCommandsUtils.getDataFromUsername(arg).getKey();
         }
     }
 }
