@@ -10,7 +10,7 @@ website: https://jochyoua.github.io
 commands:
   offlinecommands:
     description: "Lists, reloads, or adds commands for users!"
-    aliases: [oc]
+    aliases: [ oc ]
     permission: "offlinecommands.use"
     default: false
-    usage: "/<command> <list, reload, add, remove> [executioner=\"\", user=\"\", command=\"\"]"
+    usage: "/<command> <list, info, reload, add, remove> [executioner=\"\", user=\"\", command=\"\"]"
