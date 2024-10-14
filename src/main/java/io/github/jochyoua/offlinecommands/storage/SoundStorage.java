@@ -1,8 +1,10 @@
 package io.github.jochyoua.offlinecommands.storage;
 
+import io.github.jochyoua.offlinecommands.VariableConstants;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
+import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
@@ -16,7 +18,7 @@ import java.util.Map;
 public class SoundStorage implements ConfigurationSerializable {
 
     @Builder.Default
-    private Sound sound = Sound.BLOCK_NOTE_BLOCK_CHIME;
+    private Sound sound = Bukkit.getVersion().contains("1.8") ? Sound.valueOf("NOTE_PIANO") : Sound.BLOCK_NOTE_BLOCK_CHIME;
 
     @Builder.Default
     private float volume = 1.0F;
@@ -38,7 +40,7 @@ public class SoundStorage implements ConfigurationSerializable {
         try {
             sound = Sound.valueOf(soundName);
         } catch (IllegalArgumentException ignored) {
-            sound = Sound.BLOCK_NOTE_BLOCK_CHIME;
+            sound = VariableConstants.DEFAULT_SOUND.getSound();
         }
 
         return SoundStorage.builder().sound(sound).volume(volume).pitch(pitch).build();

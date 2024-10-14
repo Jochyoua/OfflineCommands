@@ -9,6 +9,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -30,8 +31,14 @@ public class UserStorage implements ConfigurationSerializable {
      * @return a new UserStorage object with the values from the map
      */
     public static UserStorage deserialize(Map<String, Object> map) {
-        List<CommandStorage> commands = new ArrayList<>(((List<Map<String, Object>>) map.get("commands")).stream().map(CommandStorage::deserialize).toList());
-        return UserStorage.builder().uuid(UUID.fromString((String) map.get("uuid"))).username((String) map.get("username")).commands(commands).build();
+        List<CommandStorage> commands = ((List<Map<String, Object>>) map.get("commands")).stream()
+                .map(CommandStorage::deserialize)
+                .collect(Collectors.toList());
+        return UserStorage.builder()
+                .uuid(UUID.fromString((String) map.get("uuid")))
+                .username((String) map.get("username"))
+                .commands(commands)
+                .build();
     }
 
     /**
@@ -47,7 +54,7 @@ public class UserStorage implements ConfigurationSerializable {
         Map<String, Object> map = new HashMap<>();
         map.put("uuid", uuid.toString());
         map.put("username", username);
-        map.put("commands", commands.stream().map(CommandStorage::serialize).toList());
+        map.put("commands", commands.stream().map(CommandStorage::serialize).collect(Collectors.toList()));
         return map;
     }
 
@@ -61,8 +68,12 @@ public class UserStorage implements ConfigurationSerializable {
      * @return a command storage that matches the identifier, or null if none matches
      */
     public CommandStorage getCommand(String identifier) {
-        Optional<CommandStorage> offlineCommandOptional = commands.stream().filter(offlineCommand -> offlineCommand.getIdentifier().equalsIgnoreCase(identifier)).findFirst();
-        return offlineCommandOptional.orElse(null);
+        for (CommandStorage command : commands) {
+            if (command.getIdentifier().equalsIgnoreCase(identifier)) {
+                return command;
+            }
+        }
+        return null;
     }
 
     /**
@@ -73,8 +84,15 @@ public class UserStorage implements ConfigurationSerializable {
      * @param player a player that represents the target of the commands
      */
     public void runAllCommands(Player player) {
-        for (CommandStorage command : this.getCommands()) {
+        Iterator<CommandStorage> iterator = this.getCommands().iterator();
+
+        while (iterator.hasNext()) {
+            CommandStorage command = iterator.next();
             OfflineCommandsUtils.runCommandAsPlayer(player, command);
+
+            if (!command.getRecurring()) {
+                iterator.remove();
+            }
         }
     }
 }

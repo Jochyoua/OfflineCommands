@@ -1,6 +1,5 @@
 package io.github.jochyoua.offlinecommands.storage;
 
-import com.google.common.eventbus.EventBus;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
@@ -35,6 +34,9 @@ public class CommandStorage implements ConfigurationSerializable {
     @Builder.Default
     private SoundStorage soundStorage = null;
 
+    @Builder.Default
+    private Boolean recurring = false;
+
 
     /**
      * A static method that deserializes a map of strings and objects into a CommandStorage object.
@@ -59,6 +61,7 @@ public class CommandStorage implements ConfigurationSerializable {
                         .orElse(DEFAULT_COMMAND.getRequiredPermission()))
                 .soundStorage(Optional.ofNullable((SoundStorage) map.get("soundStorage"))
                         .orElse(DEFAULT_COMMAND.getSoundStorage()))
+                .recurring((Boolean) map.getOrDefault("recurring", false))
                 .build();
     }
 
@@ -78,6 +81,7 @@ public class CommandStorage implements ConfigurationSerializable {
         map.put("message", message);
         map.put("requiredPermission", requiredPermission);
         map.put("soundStorage", soundStorage);
+        map.put("recurring", recurring);
         return map;
     }
 
