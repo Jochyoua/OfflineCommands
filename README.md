@@ -95,4 +95,4 @@ You're invited to contribute! If you have enhancements or new features in mind, 
 This project is licensed under the [GPL-3.0 License](LICENSE).
 
 ***
-This guide finishes here, thank you for reading!
+This guide finishes here, thank you for reading! :)
