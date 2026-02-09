@@ -9,8 +9,9 @@ import java.io.File;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-
+import java.util.stream.Collectors;
 
 public class StorageManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -71,14 +72,26 @@ public class StorageManager {
      * @throws JsonProcessingException if an error occurs while processing JSON
      */
     public UserStorage getUser(UUID uuid) throws SQLException, JsonProcessingException {
-        String sql = "SELECT * FROM UserStorage WHERE uuid = ?";
+        String sql = "SELECT uuid, commands, username FROM UserStorage WHERE uuid = ?";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, uuid.toString());
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                List<CommandStorage> commands = objectMapper.readValue(rs.getString("commands"), new TypeReference<List<CommandStorage>>() {
+                String commandsJson = rs.getString("commands");
+                List<CommandStorage> commands = new ArrayList<>();
+                if (commandsJson != null && !commandsJson.isEmpty()) {
+                    List<Map<String, Object>> rawList = objectMapper.readValue(commandsJson, new TypeReference<List<Map<String, Object>>>() {
+                    });
+                    commands = rawList.stream().map(CommandStorage::deserialize).collect(Collectors.toList());
+                }
+
+                commands.forEach(command -> {
+                    if (command.getIdentifier() == null || command.getIdentifier().isEmpty()) {
+                        command.setIdentifier(UUID.randomUUID().toString().split("-")[0]);
+                    }
                 });
+
                 return UserStorage.builder()
                         .uuid(UUID.fromString(rs.getString("uuid")))
                         .username(rs.getString("username"))
@@ -102,21 +115,28 @@ public class StorageManager {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userStorage.getUuid().toString());
             pstmt.setString(2, userStorage.getUsername());
-            pstmt.setString(3, objectMapper.writeValueAsString(userStorage.getCommands()));
+            List<Map<String, Object>> serializedCommands = userStorage.getCommands() == null
+                    ? new ArrayList<>()
+                    : userStorage.getCommands().stream().map(CommandStorage::serialize).collect(Collectors.toList());
+            pstmt.setString(3, objectMapper.writeValueAsString(serializedCommands));
             pstmt.executeUpdate();
         }
     }
 
     public CommandStorage getCommandFromDatabase(String commandIdentifier) throws SQLException, JsonProcessingException {
-        String sql = "SELECT * FROM UserStorage";
+        String sql = "SELECT commands FROM UserStorage";
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                List<CommandStorage> commands = objectMapper.readValue(rs.getString("commands"), new TypeReference<List<CommandStorage>>() {
+                String commandsJson = rs.getString("commands");
+                if (commandsJson == null || commandsJson.isEmpty()) continue;
+
+                List<Map<String, Object>> rawList = objectMapper.readValue(commandsJson, new TypeReference<List<Map<String, Object>>>() {
                 });
-                for (CommandStorage command : commands) {
-                    if (command.getIdentifier().equalsIgnoreCase(commandIdentifier)) {
+                for (Map<String, Object> rawCmd : rawList) {
+                    CommandStorage command = CommandStorage.deserialize(rawCmd);
+                    if (command.getIdentifier() != null && command.getIdentifier().equalsIgnoreCase(commandIdentifier)) {
                         return command;
                     }
                 }
@@ -150,13 +170,18 @@ public class StorageManager {
      */
     public List<UserStorage> getUserStorageList() throws SQLException, JsonProcessingException {
         List<UserStorage> userStorageList = new ArrayList<>();
-        String sql = "SELECT * FROM UserStorage";
+        String sql = "SELECT uuid, username, commands FROM UserStorage";
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                List<CommandStorage> commands = objectMapper.readValue(rs.getString("commands"), new TypeReference<List<CommandStorage>>() {
-                });
+                String commandsJson = rs.getString("commands");
+                List<CommandStorage> commands = new ArrayList<>();
+                if (commandsJson != null && !commandsJson.isEmpty()) {
+                    List<Map<String, Object>> rawList = objectMapper.readValue(commandsJson, new TypeReference<List<Map<String, Object>>>() {
+                    });
+                    commands = rawList.stream().map(CommandStorage::deserialize).collect(Collectors.toList());
+                }
                 UserStorage userStorage = UserStorage.builder()
                         .uuid(UUID.fromString(rs.getString("uuid")))
                         .username(rs.getString("username"))

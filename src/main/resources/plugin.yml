@@ -6,6 +6,8 @@ authors: [ Jochyoua, Phoenix616 ]
 softdepend: [ PlaceHolderAPI ]
 description: A plugin to execute commands when a player joins
 website: https://jochyoua.github.io
+folia-supported: true
+
 
 commands:
   offlinecommands:

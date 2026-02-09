@@ -16,7 +16,7 @@ import java.util.logging.Level;
 
 public class DebugLogger {
 
-    private static final long ONE_DAY_MILLIS = 24 * 60 * 60 * 1000;
+    private static final long ONE_DAY_MILLIS = 24 * 60 * 60 * 1000L;
     private final Plugin plugin;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -28,6 +28,11 @@ public class DebugLogger {
         if (level.equals(Level.WARNING)) {
             Bukkit.getLogger().warning(message);
         }
+
+        if (plugin == null) {
+            return;
+        }
+
         String timeStamp = LocalDateTime.now().format(formatter);
         StackTraceElement element = getCallerDetails();
 

@@ -10,6 +10,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -134,7 +135,9 @@ public class ModifyCommands {
                 .build();
 
         if (userData.getValue().isOnline() && offlineCommands.getConfig().getBoolean(SETTINGS_PATH + ".execute-if-online")) {
-            OfflineCommandsUtils.runCommandAsPlayer(userData.getValue().getPlayer(), commandStorage);
+            Player player = userData.getValue().getPlayer();
+            offlineCommands.getScheduler().global().run(() ->
+                    OfflineCommandsUtils.runCommandAsPlayer(player, commandStorage));
             sendFeedbackMessage(sender, feedback, String.format(offlineCommands.getConfig().getString(VARIABLES_PATH + ".currently-online")));
             return true;
         }

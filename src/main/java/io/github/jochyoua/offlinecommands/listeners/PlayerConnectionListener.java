@@ -3,7 +3,6 @@ package io.github.jochyoua.offlinecommands.listeners;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.jochyoua.offlinecommands.OfflineCommands;
 import io.github.jochyoua.offlinecommands.storage.UserStorage;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -33,7 +32,11 @@ public class PlayerConnectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent playerJoinEvent) {
-        Bukkit.getScheduler().runTaskLater(offlineCommands, () -> handlePlayerJoin(playerJoinEvent.getPlayer()), offlineCommands.getConfig().getInt(SETTINGS_PATH + ".delay-execute-after-join-ticks", 20));
+        Player player = playerJoinEvent.getPlayer();
+        int delay = offlineCommands.getConfig().getInt(SETTINGS_PATH + ".delay-execute-after-join-ticks", 20);
+
+
+        offlineCommands.getScheduler().entity(player).runDelayed(() -> handlePlayerJoin(player), delay);
     }
 
     /**
@@ -47,17 +50,21 @@ public class PlayerConnectionListener implements Listener {
             return;
         }
 
-        userStorage.runAllCommands(player);
 
-        try {
-            if (userStorage.getCommands().isEmpty()) {
-                offlineCommands.getStorageManager().removeUser(player.getUniqueId());
-            } else {
-                offlineCommands.getStorageManager().addOrUpdateUser(userStorage);
+        offlineCommands.getScheduler().global().run(() -> {
+
+            userStorage.runAllCommands(player);
+
+            try {
+                if (userStorage.getCommands().isEmpty()) {
+                    offlineCommands.getStorageManager().removeUser(player.getUniqueId());
+                } else {
+                    offlineCommands.getStorageManager().addOrUpdateUser(userStorage);
+                }
+            } catch (SQLException | JsonProcessingException e) {
+                offlineCommands.getDebugLogger().log(Level.WARNING, "Failed to update user in database, fix error before continuing: " + e.getMessage());
             }
-        } catch (SQLException | JsonProcessingException e) {
-            offlineCommands.getDebugLogger().log(Level.WARNING, "Failed to update user in database, fix error before continuing: " + e.getMessage());
-        }
+        });
     }
 
     private UserStorage getUserStorage(UUID uuid) {

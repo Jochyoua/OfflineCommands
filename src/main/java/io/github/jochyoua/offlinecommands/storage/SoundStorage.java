@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 @Data
 @Builder
@@ -33,17 +34,58 @@ public class SoundStorage implements ConfigurationSerializable {
      * @throws IllegalArgumentException If the sound name is not a valid Sound enum value.
      */
     public static SoundStorage deserialize(Map<String, Object> map) {
-        String soundName = (String) map.get("sound");
-        float volume = Float.parseFloat(map.get("volume").toString());
-        float pitch = Float.parseFloat(map.get("pitch").toString());
-        Sound sound;
-        try {
-            sound = Sound.valueOf(soundName);
-        } catch (IllegalArgumentException ignored) {
-            sound = VariableConstants.DEFAULT_SOUND.getSound();
+        if (map == null) {
+            Bukkit.getLogger().log(Level.WARNING, "SoundStorage: map was null, using default sound.");
+            return SoundStorage.builder()
+                    .sound(VariableConstants.DEFAULT_SOUND.getSound())
+                    .volume(1.0f)
+                    .pitch(1.0f)
+                    .build();
         }
 
-        return SoundStorage.builder().sound(sound).volume(volume).pitch(pitch).build();
+        Object rawSoundObject = map.get("sound");
+        float volume = parseFloatOrDefault(map.get("volume"), 1.0f);
+        float pitch = parseFloatOrDefault(map.get("pitch"), 1.0f);
+
+        Sound resolvedSound = VariableConstants.DEFAULT_SOUND.getSound();
+
+        try {
+            if (rawSoundObject instanceof Sound) {
+                resolvedSound = (Sound) rawSoundObject;
+
+            } else if (rawSoundObject instanceof String) {
+                String soundName = (String) rawSoundObject;
+                resolvedSound = Sound.valueOf(soundName.toUpperCase());
+
+            } else if (rawSoundObject instanceof Map) {
+                Map<?, ?> nestedMap = (Map<?, ?>) rawSoundObject;
+                Object nestedSoundName = nestedMap.get("sound");
+
+                if (nestedSoundName instanceof String) {
+                    resolvedSound = Sound.valueOf(((String) nestedSoundName).toUpperCase());
+                }
+
+            }
+        } catch (Exception exception) {
+            Bukkit.getLogger().log(Level.WARNING, String.format("SoundStorage: invalid sound '%s', using default. Error: %s", rawSoundObject, exception.getMessage()));
+            resolvedSound = VariableConstants.DEFAULT_SOUND.getSound();
+        }
+
+        return SoundStorage.builder()
+                .sound(resolvedSound)
+                .volume(volume)
+                .pitch(pitch)
+                .build();
+    }
+
+
+    private static float parseFloatOrDefault(Object o, float def) {
+        if (o == null) return def;
+        try {
+            return Float.parseFloat(o.toString());
+        } catch (NumberFormatException ignored) {
+            return def;
+        }
     }
 
     /**

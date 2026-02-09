@@ -1,5 +1,7 @@
 package io.github.jochyoua.offlinecommands;
 
+import com.cjcrafter.foliascheduler.FoliaCompatibility;
+import com.cjcrafter.foliascheduler.ServerImplementation;
 import io.github.jochyoua.offlinecommands.api.DebugLogger;
 import io.github.jochyoua.offlinecommands.commands.OfflineCommandExecutor;
 import io.github.jochyoua.offlinecommands.libs.Metrics;
@@ -33,12 +35,13 @@ public final class OfflineCommands extends JavaPlugin {
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            Bukkit.getConsoleSender().sendMessage("Unable to locate the class 'org.sqlite.JDBC'. SQLite will not work.");
         }
     }
 
     private StorageManager storageManager;
     private DebugLogger debugLogger;
+    private ServerImplementation scheduler;
 
     public void onReload() {
         this.reloadConfig();
@@ -56,13 +59,15 @@ public final class OfflineCommands extends JavaPlugin {
         setupCommand();
         setupMetrics();
         debugLogger = new DebugLogger(getConfig().getBoolean("settings.log-to-file", true) ? this : null);
+        this.scheduler = new FoliaCompatibility(this).getServerImplementation();
     }
 
     @Override
     public void onDisable() {
         HandlerList.unregisterAll(this);
-        Bukkit.getScheduler().cancelTasks(this);
         unregisterClasses();
+        this.scheduler.cancelTasks();
+        this.scheduler = null;
     }
 
     private void setupConfig() {

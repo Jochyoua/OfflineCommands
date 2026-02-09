@@ -59,8 +59,11 @@ public class CommandStorage implements ConfigurationSerializable {
                         .orElse(DEFAULT_COMMAND.getMessage()))
                 .requiredPermission(Optional.ofNullable((String) map.get("requiredPermission"))
                         .orElse(DEFAULT_COMMAND.getRequiredPermission()))
-                .soundStorage(Optional.ofNullable((SoundStorage) map.get("soundStorage"))
-                        .orElse(DEFAULT_COMMAND.getSoundStorage()))
+                .soundStorage(
+                        map.get("soundStorage") instanceof Map
+                                ? SoundStorage.deserialize((Map<String, Object>) map.get("soundStorage"))
+                                : DEFAULT_COMMAND.getSoundStorage()
+                )
                 .recurring((Boolean) map.getOrDefault("recurring", false))
                 .build();
     }
@@ -80,7 +83,7 @@ public class CommandStorage implements ConfigurationSerializable {
         map.put("commandValue", commandValue);
         map.put("message", message);
         map.put("requiredPermission", requiredPermission);
-        map.put("soundStorage", soundStorage);
+        map.put("soundStorage", soundStorage != null ? soundStorage.serialize() : null);
         map.put("recurring", recurring);
         return map;
     }

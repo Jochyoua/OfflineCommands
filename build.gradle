@@ -1,24 +1,19 @@
 plugins {
     id 'java-library'
-    id 'io.freefair.lombok' version '6.2.0'
-    id 'org.jetbrains.kotlin.jvm' version '1.6.20'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'io.freefair.lombok' version '8.4'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.22'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'io.github.jochyoua'
-version = '3.0.0'
-
-ext {
-    lombokVersion = '1.18.28'
-}
-
+version = '3.1.0'
 
 repositories {
     mavenCentral()
     maven {
-        name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
     }
+
     maven {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
@@ -31,19 +26,10 @@ repositories {
 dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.1'
     implementation 'org.xerial:sqlite-jdbc:3.42.0.1'
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    compileOnly "com.destroystokyo.paper:paper-api:1.13-R0.1-SNAPSHOT"
+    compileOnly("com.destroystokyo.paper:paper-api:1.13-R0.1-SNAPSHOT")
+    implementation("com.cjcrafter:foliascheduler:0.7.0")
     compileOnly 'me.clip:placeholderapi:2.11.6'
-
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-
-    testImplementation "org.projectlombok:lombok:${lombokVersion}"
-    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-}
-
-lombok {
-    version = lombokVersion
 }
 
 def targetJavaVersion = 8

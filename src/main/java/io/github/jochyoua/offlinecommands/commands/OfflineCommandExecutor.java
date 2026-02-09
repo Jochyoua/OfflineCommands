@@ -70,6 +70,7 @@ public class OfflineCommandExecutor implements CommandExecutor, TabCompleter {
             try {
                 return Integer.parseInt(args[1]);
             } catch (NumberFormatException ignored) {
+                return 1;
             }
         }
         return 1;
